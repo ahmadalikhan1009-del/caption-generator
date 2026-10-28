@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - AI Viral Shorts & Caption Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border-color: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --danger: #ef4444;
+            --success: #16a34a;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Header */
+        header {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo-badge {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .logo-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .admin-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .btn-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            background: #ffffff;
+            color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-link:hover {
+            background: #f1f5f9;
+            border-color: var(--border-hover);
+        }
+
+        .btn-logout {
+            color: #b91c1c;
+            border-color: #fecaca;
+            background: #fef2f2;
+        }
+
+        .btn-logout:hover {
+            background: #fee2e2;
+            border-color: #fca5a5;
+        }
+
+        /* Main Content Container */
+        main {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 24px 20px 48px;
+            flex: 1;
+        }
+
+        /* Section Tabs */
+        .tabs-nav {
+            display: flex;
+            gap: 8px;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-count {
+            background: #e2e8f0;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 999px;
+            transition: all 0.15s ease;
+        }
+
+        .tab-btn.active .tab-count {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* Controls Row: Search, Filter, Refresh */
+        .controls-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 260px;
+            max-width: 450px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 9px 12px 9px 36px;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            pointer-events: none;
+            font-size: 14px;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 7px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .filter-btn:hover {
+            background: #f1f5f9;
+            color: var(--text-main);
+        }
+
+        .filter-btn.active {
+            background: #0f172a;
+            border-color: #0f172a;
+            color: #ffffff;
+        }
+
+        /* Data Card and Table Styles */
+        .panel-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .data-table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #fbfcfe;
+        }
+
+        .user-email-cell {
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-id-badge {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+            font-family: monospace;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .pill-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .pill-success {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .pill-warning {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .pill-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .pill-muted {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        /* Reviews List Cards */
+        .reviews-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .review-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .review-card.unread {
+            border-left: 4px solid var(--primary);
+            background: #fafcff;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .reviewer-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .reviewer-email {
+            font-weight: 700;
+            font-size: 13px;
+            color: #0f172a;
+        }
+
+        .review-date {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .review-rating-stars {
+            color: #f59e0b;
+            font-size: 14px;
+            letter-spacing: 1px;
+            font-weight: 800;
+        }
+
+        .review-body {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #334155;
+            background: #f8fafc;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid #f1f5f9;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .review-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding-top: 4px;
+        }
+
+        .btn-action-sm {
+            padding: 5px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: #ffffff;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-action-sm:hover {
+            background: #f1f5f9;
+            border-color: var(--border-hover);
+        }
+
+        /* Empty State */
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .empty-icon {
+            font-size: 40px;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .empty-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .empty-desc {
+            font-size: 13px;
+            color: #64748b;
+            max-width: 360px;
+            line-height: 1.5;
+        }
+
+        /* Auth Gate Screen (When not logged in as admin) */
+        .auth-gate-container {
+            max-width: 420px;
+            margin: 60px auto 0;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 32px 28px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+
+        .auth-gate-icon {
+            width: 56px;
+            height: 56px;
+            background: #eff6ff;
+            color: var(--primary);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin: 0 auto 16px;
+        }
+
+        .auth-gate-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        .auth-gate-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .auth-input-group {
+            text-align: left;
+            margin-bottom: 14px;
+        }
+
+        .auth-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.15s ease;
+        }
+
+        .auth-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .auth-btn-primary {
+            width: 100%;
+            padding: 11px 16px;
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            margin-top: 6px;
+        }
+
+        .auth-btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .auth-alert {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            text-align: left;
+            display: none;
+        }
+
+        .auth-alert.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            display: block;
+        }
+
+        /* Access Denied Card */
+        .access-denied-container {
+            max-width: 480px;
+            margin: 60px auto 0;
+            background: #ffffff;
+            border: 1px solid #fee2e2;
+            border-radius: 14px;
+            padding: 32px 28px;
+            box-shadow: 0 10px 25px -5px rgba(239,68,68,0.08);
+            text-align: center;
+            display: none;
+        }
+
+        .access-denied-icon {
+            width: 56px;
+            height: 56px;
+            background: #fee2e2;
+            color: #dc2626;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin: 0 auto 16px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .header-inner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .controls-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-box {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="header-inner">
+            <a href="/" class="logo-group" title="Return to Video Studio">
+                <div class="logo-badge">ADMIN</div>
+                <div class="logo-title">AI Viral Shorts & Caption Studio</div>
+            </a>
+            <div class="header-actions">
+                <div class="admin-badge" id="admin-user-badge" style="display: none;">
+                    <span id="admin-email-text">Administrator</span>
+                </div>
+                <a href="/" class="btn-link" title="Open Main Studio">
+                    <span>Back to Studio</span>
+                </a>
+                <button type="button" class="btn-link btn-logout" id="btn-admin-logout" style="display: none;">
+                    <span>Log Out</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main>
+
+        <!-- Access Denied View (When logged in as a non-admin ordinary user) -->
+        <div class="access-denied-container" id="access-denied-view">
+            <h2 class="auth-gate-title">Access Denied</h2>
+            <p class="auth-gate-desc" id="access-denied-msg">
+                Your account does not have administrator privileges. Only authorized platform administrators can access this panel.
+            </p>
+            <div style="display: flex; gap: 8px; justify-content: center; margin-top: 16px;">
+                <button type="button" class="btn-link btn-logout" id="btn-denied-switch">Sign In with Admin Account</button>
+                <a href="/" class="btn-link">Back to Studio</a>
+            </div>
+        </div>
+
+        <!-- Admin Login Form (When no valid session exists) -->
+        <div class="auth-gate-container" id="admin-login-view" style="display: none;">
+            <h2 class="auth-gate-title">Admin Authentication</h2>
+            <p class="auth-gate-desc">
+                Please sign in with your authorized administrator credentials to manage platform users and reviews.
+            </p>
+            
+            <div class="auth-alert" id="admin-auth-alert"></div>
+
+            <form id="form-admin-login">
+                <div class="auth-input-group">
+                    <label class="auth-label" for="admin-login-email">Administrator Email</label>
+                    <input type="email" id="admin-login-email" class="auth-input" placeholder="admin@example.com" required autocomplete="username">
+                </div>
+                <div class="auth-input-group">
+                    <label class="auth-label" for="admin-login-password">Password</label>
+                    <input type="password" id="admin-login-password" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="auth-btn-primary" id="btn-submit-admin-login">Sign In as Admin</button>
+            </form>
+        </div>
+
+        <!-- Protected Admin Dashboard View -->
+        <div id="admin-dashboard-view" style="display: none;">
+            
+            <!-- Section Tabs: ONLY Users and Reviews -->
+            <div class="tabs-nav">
+                <button type="button" class="tab-btn active" id="tab-users">
+                    <span>Users</span>
+                    <span class="tab-count" id="count-users">0</span>
+                </button>
+                <button type="button" class="tab-btn" id="tab-reviews">
+                    <span>Reviews</span>
+                    <span class="tab-count" id="count-reviews">0</span>
+                </button>
+            </div>
+
+            <!-- SECTION A: USERS -->
+            <section id="section-users">
+                <div class="controls-bar">
+                    <div class="search-box">
+                        <input type="text" id="users-search-input" class="search-input" placeholder="Search users by email...">
+                    </div>
+                    <div class="filter-group">
+                        <button type="button" class="btn-link" id="btn-refresh-users" title="Reload Users">
+                            <span>Refresh Users</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <div class="data-table-container">
+                        <table id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>User Email</th>
+                                    <th>Videos Completed</th>
+                                    <th>Review Status</th>
+                                    <th>Registration Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="users-empty-state" style="display: none;">
+                        <div class="empty-title">No Users Found</div>
+                        <div class="empty-desc" id="users-empty-desc">
+                            There are currently no registered users matching your search query.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION B: REVIEWS -->
+            <section id="section-reviews" style="display: none;">
+                <div class="controls-bar">
+                    <div class="search-box">
+                        <input type="text" id="reviews-search-input" class="search-input" placeholder="Search reviews by email or feedback text...">
+                    </div>
+                    <div class="filter-group">
+                        <button type="button" class="filter-btn active" data-review-filter="all">All</button>
+                        <button type="button" class="filter-btn" data-review-filter="unread">Unread</button>
+                        <button type="button" class="filter-btn" data-review-filter="read">Read</button>
+                        <button type="button" class="btn-link" id="btn-refresh-reviews" title="Reload Reviews">
+                            <span>Refresh Reviews</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <div class="reviews-grid" id="reviews-list-container">
+                        <!-- Populated dynamically -->
+                    </div>
+                    <div class="empty-state" id="reviews-empty-state" style="display: none;">
+                        <div class="empty-title">No Reviews Found</div>
+                        <div class="empty-desc" id="reviews-empty-desc">
+                            No user reviews or feedback have been submitted yet.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+
+    <script>
+        // API Base URL
+        const API_BASE = (window.location.origin && window.location.origin.startsWith('http')) 
+            ? window.location.origin 
+            : 'http://127.0.0.1:8000';
+
+        // State Store
+        let currentAdminUser = null;
+        let activeTab = 'users'; // 'users' or 'reviews'
+        let cachedUsers = [];
+        let cachedReviews = [];
+        let activeReviewFilter = 'all';
+
+        // DOM Element Selectors
+        const adminUserBadge = document.getElementById('admin-user-badge');
+        const adminEmailText = document.getElementById('admin-email-text');
+        const btnAdminLogout = document.getElementById('btn-admin-logout');
+
+        const adminLoginView = document.getElementById('admin-login-view');
+        const adminAuthAlert = document.getElementById('admin-auth-alert');
+        const formAdminLogin = document.getElementById('form-admin-login');
+        const adminLoginEmail = document.getElementById('admin-login-email');
+        const adminLoginPassword = document.getElementById('admin-login-password');
+        const btnSubmitAdminLogin = document.getElementById('btn-submit-admin-login');
+
+        const accessDeniedView = document.getElementById('access-denied-view');
+        const accessDeniedMsg = document.getElementById('access-denied-msg');
+        const btnDeniedSwitch = document.getElementById('btn-denied-switch');
+
+        const adminDashboardView = document.getElementById('admin-dashboard-view');
+        const tabUsers = document.getElementById('tab-users');
+        const tabReviews = document.getElementById('tab-reviews');
+        const countUsers = document.getElementById('count-users');
+        const countReviews = document.getElementById('count-reviews');
+
+        const sectionUsers = document.getElementById('section-users');
+        const usersSearchInput = document.getElementById('users-search-input');
+        const usersTbody = document.getElementById('users-tbody');
+        const usersEmptyState = document.getElementById('users-empty-state');
+        const usersEmptyDesc = document.getElementById('users-empty-desc');
+        const btnRefreshUsers = document.getElementById('btn-refresh-users');
+
+        const sectionReviews = document.getElementById('section-reviews');
+        const reviewsSearchInput = document.getElementById('reviews-search-input');
+        const reviewsListContainer = document.getElementById('reviews-list-container');
+        const reviewsEmptyState = document.getElementById('reviews-empty-state');
+        const reviewsEmptyDesc = document.getElementById('reviews-empty-desc');
+        const btnRefreshReviews = document.getElementById('btn-refresh-reviews');
+        const reviewFilterBtns = document.querySelectorAll('.filter-btn[data-review-filter]');
+
+        // Helper: Get Auth Header
+        function getAuthHeader() {
+            const token = localStorage.getItem('auth_token');
+            return token ? { 'Authorization': `Bearer ${token}` } : {};
+        }
+
+        // Helper: Format Dates
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            try {
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return String(dateStr);
+                return d.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (_) {
+                return String(dateStr);
+            }
+        }
+
+        // Helper: Star rating display
+        function formatStars(rating) {
+            const r = Math.max(1, Math.min(5, parseInt(rating) || 5));
+            return '★'.repeat(r) + '☆'.repeat(5 - r) + ` (${r}/5)`;
+        }
+
+        // Check Admin Session on Page Load
+        async function verifyAdminSession() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                showLoginView();
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/check`, {
+                    headers: getAuthHeader()
+                });
+
+                if (res.status === 401) {
+                    showLoginView();
+                    return;
+                }
+
+                if (res.status === 403) {
+                    let errDetail = 'Access denied. Administrator privileges required.';
+                    try {
+                        const errData = await res.json();
+                        if (errData && errData.detail) errDetail = errData.detail;
+                    } catch (_) {}
+                    showAccessDeniedView(errDetail);
+                    return;
+                }
+
+                if (res.ok) {
+                    const data = await res.json();
+                    currentAdminUser = data;
+                    showDashboardView(data);
+                    loadAllAdminData();
+                } else {
+                    showLoginView();
+                }
+            } catch (err) {
+                console.error('Session check error:', err);
+                showLoginView();
+            }
+        }
+
+        function showLoginView() {
+            adminDashboardView.style.display = 'none';
+            accessDeniedView.style.display = 'none';
+            adminLoginView.style.display = 'block';
+            adminUserBadge.style.display = 'none';
+            btnAdminLogout.style.display = 'none';
+        }
+
+        function showAccessDeniedView(msg) {
+            adminDashboardView.style.display = 'none';
+            adminLoginView.style.display = 'none';
+            accessDeniedView.style.display = 'block';
+            if (msg) accessDeniedMsg.innerText = msg;
+            adminUserBadge.style.display = 'none';
+            btnAdminLogout.style.display = 'flex';
+        }
+
+        function showDashboardView(user) {
+            adminLoginView.style.display = 'none';
+            accessDeniedView.style.display = 'none';
+            adminDashboardView.style.display = 'block';
+            adminUserBadge.style.display = 'flex';
+            adminEmailText.innerText = `${user.email} (Admin)`;
+            btnAdminLogout.style.display = 'flex';
+        }
+
+        // Admin Login Form Submission
+        if (formAdminLogin) {
+            formAdminLogin.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = adminLoginEmail.value.trim();
+                const password = adminLoginPassword.value;
+
+                adminAuthAlert.className = 'auth-alert';
+                adminAuthAlert.style.display = 'none';
+                btnSubmitAdminLogin.disabled = true;
+                btnSubmitAdminLogin.innerText = 'Verifying credentials...';
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.detail || 'Failed to sign in.');
+                    }
+
+                    if (data.token) {
+                        localStorage.setItem('auth_token', data.token);
+                        // Re-verify admin access
+                        await verifyAdminSession();
+                    }
+                } catch (err) {
+                    adminAuthAlert.className = 'auth-alert error';
+                    adminAuthAlert.innerText = err.message;
+                    adminAuthAlert.style.display = 'block';
+                } finally {
+                    btnSubmitAdminLogin.disabled = false;
+                    btnSubmitAdminLogin.innerText = 'Sign In as Admin';
+                }
+            });
+        }
+
+        // Logout
+        function handleLogout() {
+            const tok = localStorage.getItem('auth_token');
+            if (tok) {
+                fetch(`${API_BASE}/api/auth/logout`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${tok}` }
+                }).catch(() => {});
+            }
+            localStorage.removeItem('auth_token');
+            currentAdminUser = null;
+            showLoginView();
+        }
+
+        if (btnAdminLogout) btnAdminLogout.addEventListener('click', handleLogout);
+        if (btnDeniedSwitch) btnDeniedSwitch.addEventListener('click', handleLogout);
+
+        // Tab Navigation
+        tabUsers.addEventListener('click', () => switchTab('users'));
+        tabReviews.addEventListener('click', () => switchTab('reviews'));
+
+        function switchTab(tab) {
+            activeTab = tab;
+            if (tab === 'users') {
+                tabUsers.classList.add('active');
+                tabReviews.classList.remove('active');
+                sectionUsers.style.display = 'block';
+                sectionReviews.style.display = 'none';
+            } else {
+                tabReviews.classList.add('active');
+                tabUsers.classList.remove('active');
+                sectionReviews.style.display = 'block';
+                sectionUsers.style.display = 'none';
+            }
+        }
+
+        // Load All Admin Data
+        async function loadAllAdminData() {
+            await Promise.all([fetchUsers(), fetchReviews()]);
+        }
+
+        // Fetch Users API
+        async function fetchUsers(searchQuery = '') {
+            try {
+                let url = `${API_BASE}/api/admin/users`;
+                if (searchQuery) url += `?q=${encodeURIComponent(searchQuery)}`;
+
+                const res = await fetch(url, { headers: getAuthHeader() });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                cachedUsers = data.users || [];
+                countUsers.innerText = cachedUsers.length;
+                renderUsersTable(cachedUsers);
+            } catch (err) {
+                console.error('Fetch users error:', err);
+            }
+        }
+
+        // Render Users Table
+        function renderUsersTable(users) {
+            usersTbody.innerHTML = '';
+            if (!users || users.length === 0) {
+                usersEmptyState.style.display = 'flex';
+                document.getElementById('users-table').style.display = 'none';
+                return;
+            }
+
+            usersEmptyState.style.display = 'none';
+            document.getElementById('users-table').style.display = 'table';
+
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                const reviewedPill = u.has_reviewed
+                    ? `<span class="pill-badge pill-success">Reviewed</span>`
+                    : `<span class="pill-badge pill-warning">Pending Review</span>`;
+
+                tr.innerHTML = `
+                    <td>
+                        <div class="user-email-cell">
+                            <span>${escapeHtml(u.email || 'No Email')}</span>
+                            <span class="user-id-badge">ID #${u.id}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="pill-badge pill-info">${(u.videos_count !== undefined && u.videos_count !== null) ? u.videos_count : (u.completed_videos_count || 0)} Videos</span>
+                    </td>
+                    <td>${reviewedPill}</td>
+                    <td style="color: #64748b; font-size: 12px;">${formatDate(u.created_at)}</td>
+                `;
+                usersTbody.appendChild(tr);
+            });
+        }
+
+        // Fetch Reviews API
+        async function fetchReviews(searchQuery = '', filterStatus = activeReviewFilter) {
+            try {
+                let url = `${API_BASE}/api/admin/reviews`;
+                const params = [];
+                if (searchQuery) params.push(`q=${encodeURIComponent(searchQuery)}`);
+                if (filterStatus && filterStatus !== 'all') params.push(`filter_status=${encodeURIComponent(filterStatus)}`);
+                if (params.length > 0) url += `?${params.join('&')}`;
+
+                const res = await fetch(url, { headers: getAuthHeader() });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                cachedReviews = data.reviews || [];
+                countReviews.innerText = cachedReviews.length;
+                renderReviewsList(cachedReviews);
+            } catch (err) {
+                console.error('Fetch reviews error:', err);
+            }
+        }
+
+        // Render Reviews Cards
+        function renderReviewsList(reviews) {
+            reviewsListContainer.innerHTML = '';
+            if (!reviews || reviews.length === 0) {
+                reviewsEmptyState.style.display = 'flex';
+                reviewsListContainer.style.display = 'none';
+                return;
+            }
+
+            reviewsEmptyState.style.display = 'none';
+            reviewsListContainer.style.display = 'flex';
+
+            reviews.forEach(r => {
+                const card = document.createElement('div');
+                const isUnread = !r.is_read;
+                card.className = `review-card ${isUnread ? 'unread' : ''}`;
+                card.id = `review-card-${r.id}`;
+
+                const readBadge = isUnread
+                    ? `<span class="pill-badge pill-info">NEW / UNREAD</span>`
+                    : `<span class="pill-badge pill-muted">READ</span>`;
+
+                const readBtnText = isUnread ? 'Mark as Read' : 'Mark as Unread';
+
+                card.innerHTML = `
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <span class="reviewer-email">${escapeHtml(r.user_email || 'Anonymous')}</span>
+                            ${readBadge}
+                            <span class="review-date">${formatDate(r.created_at)}</span>
+                        </div>
+                        <div class="review-rating-stars">${formatStars(r.rating)}</div>
+                    </div>
+                    <div class="review-body">${escapeHtml(r.review_text || '')}</div>
+                    <div class="review-footer">
+                        <span style="font-size: 11px; color: #94a3b8;">Review ID #${r.id}</span>
+                        <button type="button" class="btn-action-sm btn-toggle-read" data-review-id="${r.id}" data-current-read="${r.is_read ? 'true' : 'false'}">
+                            ${readBtnText}
+                        </button>
+                    </div>
+                `;
+
+                const btnToggle = card.querySelector('.btn-toggle-read');
+                if (btnToggle) {
+                    btnToggle.addEventListener('click', async () => {
+                        const nextReadState = !(btnToggle.getAttribute('data-current-read') === 'true');
+                        btnToggle.disabled = true;
+                        btnToggle.innerText = 'Updating...';
+                        try {
+                            const res = await fetch(`${API_BASE}/api/admin/reviews/${r.id}/read`, {
+                                method: 'POST',
+                                headers: {
+                                    ...getAuthHeader(),
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ is_read: nextReadState })
+                            });
+                            if (res.ok) {
+                                r.is_read = nextReadState;
+                                renderReviewsList(cachedReviews);
+                            }
+                        } catch (err) {
+                            console.error('Toggle read status error:', err);
+                        } finally {
+                            btnToggle.disabled = false;
+                        }
+                    });
+                }
+
+                reviewsListContainer.appendChild(card);
+            });
+        }
+
+        // Live Search Listeners
+        let usersSearchTimeout = null;
+        usersSearchInput.addEventListener('input', () => {
+            clearTimeout(usersSearchTimeout);
+            usersSearchTimeout = setTimeout(() => {
+                fetchUsers(usersSearchInput.value.trim());
+            }, 250);
+        });
+
+        let reviewsSearchTimeout = null;
+        reviewsSearchInput.addEventListener('input', () => {
+            clearTimeout(reviewsSearchTimeout);
+            reviewsSearchTimeout = setTimeout(() => {
+                fetchReviews(reviewsSearchInput.value.trim(), activeReviewFilter);
+            }, 250);
+        });
+
+        // Review Filter Pills
+        reviewFilterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                reviewFilterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeReviewFilter = btn.getAttribute('data-review-filter');
+                fetchReviews(reviewsSearchInput.value.trim(), activeReviewFilter);
+            });
+        });
+
+        // Refresh Buttons
+        btnRefreshUsers.addEventListener('click', () => fetchUsers(usersSearchInput.value.trim()));
+        btnRefreshReviews.addEventListener('click', () => fetchReviews(reviewsSearchInput.value.trim(), activeReviewFilter));
+
+        // Helper: Escape HTML
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Run verification on start
+        verifyAdminSession();
+    </script>
+</body>
+</html>

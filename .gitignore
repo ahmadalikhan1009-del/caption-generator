@@ -1,0 +1,53 @@
+# Python virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# Environment variables & secrets (CRITICAL: Do not commit API keys/credentials)
+.env
+*.env.local
+
+# Generated media and exports
+generated_clips/
+temp_*.wav
+temp_*.mp4
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.wav
+*.aac
+
+# Binary tools & bundled executables
+ffmpeg_bin/
+ffmpeg.exe
+ffprobe.exe
+
+# Project backup archives
+_backup_*/
+_backup_*
+*.bak
+
+# Database & local data storage
+data/
+*.db
+*.sqlite3
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Logs & temporary files
+*.log
+run_log.txt
+
+# Editor & OS settings
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store
