@@ -537,12 +537,12 @@ def render_batch_custom_clips(
 
         if has_ovs:
             out_fn = f"edited_{clip_fn}"
-        else:
-            out_fn = clip_fn
-
-        clip_out_path = os.path.join(output_dir, out_fn)
-
-        if not os.path.exists(clip_out_path) or os.path.getsize(clip_out_path) < 500:
+            clip_out_path = os.path.join(output_dir, out_fn)
+            if os.path.exists(clip_out_path):
+                try:
+                    os.remove(clip_out_path)
+                except Exception:
+                    pass
             render_single_custom_clip(
                 source_video_path=source_video_path,
                 output_path=clip_out_path,
@@ -551,8 +551,22 @@ def render_batch_custom_clips(
                 aspect_ratio=aspect_ratio,
                 fit_mode=fit_mode,
                 pad_color=pad_color,
-                overlays=ovs if has_ovs else None
+                overlays=ovs
             )
+        else:
+            out_fn = clip_fn
+            clip_out_path = os.path.join(output_dir, out_fn)
+            if not os.path.exists(clip_out_path) or os.path.getsize(clip_out_path) < 500:
+                render_single_custom_clip(
+                    source_video_path=source_video_path,
+                    output_path=clip_out_path,
+                    start_time=seg["start"],
+                    duration=seg["duration"],
+                    aspect_ratio=aspect_ratio,
+                    fit_mode=fit_mode,
+                    pad_color=pad_color,
+                    overlays=None
+                )
 
         zip_entries.append((clip_out_path, clip_fn))
 

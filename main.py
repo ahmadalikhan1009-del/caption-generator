@@ -1692,6 +1692,11 @@ async def render_custom_clip_endpoint(
 
         target_fn = f"edited_{clean_fn}" if has_text else clean_fn
         output_path = os.path.join(job_output_dir, target_fn)
+        if os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
 
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(
@@ -1711,7 +1716,7 @@ async def render_custom_clip_endpoint(
         if not os.path.exists(output_path):
             raise HTTPException(status_code=500, detail="Failed to render clip.")
 
-        return FileResponse(output_path, media_type="video/mp4", filename=clean_fn)
+        return FileResponse(output_path, media_type="video/mp4", filename=target_fn)
 
     # Fallback for pre-sliced clip files
     input_path = os.path.join(job_output_dir, clean_fn)
@@ -1723,6 +1728,11 @@ async def render_custom_clip_endpoint(
 
     edited_fn = f"edited_{clean_fn}"
     output_path = os.path.join(job_output_dir, edited_fn)
+    if os.path.exists(output_path):
+        try:
+            os.remove(output_path)
+        except Exception:
+            pass
 
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(
@@ -1737,7 +1747,7 @@ async def render_custom_clip_endpoint(
     if not os.path.exists(output_path):
         raise HTTPException(status_code=500, detail="Failed to render edited clip.")
 
-    return FileResponse(output_path, media_type="video/mp4", filename=clean_fn)
+    return FileResponse(output_path, media_type="video/mp4", filename=edited_fn)
 
 
 @app.post("/api/custom-clip/render-batch-zip")

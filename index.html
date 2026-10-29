@@ -4825,6 +4825,20 @@
             };
         }
 
+        function adaptBoxForClip(s, targetClipIndex) {
+            const cloned = cloneBoxState(s);
+            if (!cloned.text || typeof targetClipIndex !== 'number') return cloned;
+            const partPattern = /\b(part|episode|ep)[\s\:\-]*\d+\b/gi;
+            if (partPattern.test(cloned.text)) {
+                cloned.text = cloned.text.replace(partPattern, (match) => {
+                    const prefixMatch = match.match(/^(part|episode|ep)[\s\:\-]*/i);
+                    const prefix = prefixMatch ? prefixMatch[0] : 'PART ';
+                    return `${prefix}${targetClipIndex}`;
+                });
+            }
+            return cloned;
+        }
+
         function applyBoxToAllClips(tb) {
             if (!tb) tb = getActiveTb();
             if (!tb) return;
@@ -4860,11 +4874,13 @@
                 if (!Array.isArray(clip.savedTextBoxes)) {
                     clip.savedTextBoxes = [];
                 }
+                const clipIdx = clip.index || (targetClips.indexOf(clip) + 1);
+                const adapted = adaptBoxForClip(snapshot, clipIdx);
                 const existingIdx = clip.savedTextBoxes.findIndex(b => b.id === snapshot.id);
                 if (existingIdx !== -1) {
-                    clip.savedTextBoxes[existingIdx] = cloneBoxState(snapshot);
+                    clip.savedTextBoxes[existingIdx] = adapted;
                 } else {
-                    clip.savedTextBoxes.push(cloneBoxState(snapshot));
+                    clip.savedTextBoxes.push(adapted);
                 }
             });
 
@@ -4899,9 +4915,16 @@
                 return;
             }
 
-            targetClips.forEach(clip => {
-                clip.savedTextBoxes = currentBoxes.map(b => cloneBoxState(b));
+            targetClips.forEach((clip, idx) => {
+                const clipIdx = clip.index || (idx + 1);
+                clip.savedTextBoxes = currentBoxes.map(b => adaptBoxForClip(b, clipIdx));
             });
+
+            if (activeCustomClip) {
+                loadClipTextBoxes(activeCustomClip.savedTextBoxes || []);
+            } else if (activeClip && currentMode === 'hindi_urdu') {
+                loadClipTextBoxes(activeClip.savedTextBoxes || []);
+            }
 
             if (btnApplyAllToAllClips) {
                 const origHtml = btnApplyAllToAllClips.innerHTML;
@@ -5034,24 +5057,28 @@
         function buildOverlayJsonList(items) {
             const list = items !== undefined ? items : textBoxes;
             const prect = stageWrapper ? stageWrapper.getBoundingClientRect() : { width: 360, height: 640 };
+            const previewH = (prect && prect.height > 50) ? Math.round(prect.height) : 640;
+            const previewW = (prect && prect.width > 50) ? Math.round(prect.width) : 360;
             return list
                 .filter(tb => {
                     const s = tb.state || tb;
-                    return s && s.text && s.text.trim().length > 0;
+                    const text = (tb.textEl ? tb.textEl.textContent : s.text) || '';
+                    return text.trim().length > 0;
                 })
                 .map(tb => {
                     const s = tb.state || tb;
+                    const text = (tb.textEl ? tb.textEl.textContent : s.text) || '';
                     let widthPct = 75;
                     if (tb.el) {
                         const elRect = tb.el.getBoundingClientRect();
-                        widthPct = prect.width > 0 ? Math.round((elRect.width / prect.width) * 100) : 75;
-                    } else if (s.widthPx && prect.width > 0) {
-                        widthPct = Math.round((s.widthPx / prect.width) * 100);
+                        widthPct = previewW > 0 ? Math.round((elRect.width / previewW) * 100) : 75;
+                    } else if (s.widthPx && previewW > 0) {
+                        widthPct = Math.round((s.widthPx / previewW) * 100);
                     } else if (s.box_width_percent) {
                         widthPct = s.box_width_percent;
                     }
                     return {
-                        text:              (s.text || '').trim(),
+                        text:              text.trim(),
                         font_family:       s.font || 'Montserrat',
                         font_size:         s.size || 28,
                         text_color:        s.color || '#ffffff',
@@ -5064,8 +5091,8 @@
                         pos_x_percent:     s.x !== undefined ? s.x : 50,
                         pos_y_percent:     s.y !== undefined ? s.y : 15,
                         box_width_percent: widthPct,
-                        preview_height:    Math.round(prect.height),
-                        preview_width:     Math.round(prect.width)
+                        preview_height:    previewH,
+                        preview_width:     previewW
                     };
                 });
         }
@@ -5184,9 +5211,20 @@
                 btnDownloadCustomZip.style.display = 'flex';
                 btnDownloadCustomZip.onclick = async () => {
                     saveCurrentClipState();
+                    const currentBoxes = getCanvasTextBoxesState();
                     const clipsMap = {};
-                    clips.forEach(c => {
-                        const ovs = buildOverlayJsonList(c.savedTextBoxes || (activeCustomClip === c ? textBoxes : []));
+                    clips.forEach((c, idx) => {
+                        const clipIdx = c.index || (idx + 1);
+                        let boxesToUse = c.savedTextBoxes;
+                        if (!boxesToUse || boxesToUse.length === 0) {
+                            if (currentBoxes.length > 0) {
+                                boxesToUse = currentBoxes.map(b => adaptBoxForClip(b, clipIdx));
+                                c.savedTextBoxes = boxesToUse;
+                            } else {
+                                boxesToUse = [];
+                            }
+                        }
+                        const ovs = buildOverlayJsonList(boxesToUse);
                         if (ovs.length > 0) {
                             clipsMap[c.filename] = ovs;
                         }
@@ -5273,6 +5311,7 @@
                 if (activeCustomClip && activeCustomClip !== targetClip) {
                     saveCurrentClipState();
                 }
+                const prevBoxes = getCanvasTextBoxesState();
                 activeCustomClip = targetClip;
 
                 // Update card highlights
@@ -5306,7 +5345,11 @@
                     videoPlayer.play().catch(() => {});
                 }
 
-                // Restore this clip's text boxes
+                // Restore this clip's text boxes (inherit current template with smart part numbering if not yet edited)
+                const clipIdx = targetClip.index || (clips.indexOf(targetClip) + 1);
+                if ((!targetClip.savedTextBoxes || targetClip.savedTextBoxes.length === 0) && prevBoxes.length > 0) {
+                    targetClip.savedTextBoxes = prevBoxes.map(b => adaptBoxForClip(b, clipIdx));
+                }
                 loadClipTextBoxes(targetClip.savedTextBoxes || []);
                 showStatus(`Editing ${targetClip.title} (${targetClip.start_formatted} - ${targetClip.end_formatted}) — Customize text boxes for this clip`, 'info');
             }
@@ -5373,8 +5416,25 @@
                 if (dlBtn) {
                     dlBtn.addEventListener('click', async (e) => {
                         e.stopPropagation();
-                        saveCurrentClipState();
-                        const ovs = buildOverlayJsonList(clip.savedTextBoxes || (activeCustomClip === clip ? textBoxes : []));
+                        if (activeCustomClip !== clip) {
+                            setActiveCustomClip(clip, card);
+                        } else {
+                            saveCurrentClipState();
+                        }
+
+                        const currentBoxes = getCanvasTextBoxesState();
+                        const clipIdx = clip.index || (clips.indexOf(clip) + 1);
+                        let boxesToUse = clip.savedTextBoxes;
+                        if (!boxesToUse || boxesToUse.length === 0) {
+                            if (currentBoxes.length > 0) {
+                                boxesToUse = currentBoxes.map(b => adaptBoxForClip(b, clipIdx));
+                                clip.savedTextBoxes = boxesToUse;
+                            } else {
+                                boxesToUse = [];
+                            }
+                        }
+
+                        const ovs = buildOverlayJsonList(boxesToUse);
 
                         const origBtnHtml = dlBtn.innerHTML;
                         dlBtn.innerHTML = '<span>Rendering...</span>';
@@ -5401,9 +5461,10 @@
                             }
                             const blob = await res.blob();
                             const blobUrl = URL.createObjectURL(blob);
+                            const targetFilename = (ovs.length > 0 ? 'edited_' : '') + clip.filename;
                             const a = document.createElement('a');
                             a.href = blobUrl;
-                            a.download = clip.filename;
+                            a.download = targetFilename;
                             document.body.appendChild(a);
                             a.click();
                             document.body.removeChild(a);

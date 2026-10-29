@@ -168,8 +168,10 @@ def generate_ass_subtitles(words, ass_file_path, font_family="Montserrat", font_
                 ov_font = "Nirmala UI"
 
         ov_size = float(ov.get("font_size") or 28)
-        ov_preview_h = float(ov.get("preview_height") or ref_preview_h)
-        ov_scale_ratio = play_res_y / max(100.0, ov_preview_h)
+        ov_preview_h = float(ov.get("preview_height") or ref_preview_h or 640.0)
+        if ov_preview_h < 50.0:
+            ov_preview_h = 640.0 if play_res_y > play_res_x else 450.0
+        ov_scale_ratio = play_res_y / ov_preview_h
         ov_scaled_font_size = max(14, int(round(ov_size * ov_scale_ratio)))
         ov_color = hex_to_ass_color(ov.get("text_color") or "#ffffff", 0)
         ov_stroke_color = hex_to_ass_color(ov.get("stroke_color") or "#000000", 0)
@@ -208,7 +210,7 @@ def generate_ass_subtitles(words, ass_file_path, font_family="Montserrat", font_
         )
         clean_ov_text = ov_text.replace("\r\n", "\\N").replace("\n", "\\N").replace("\r", "\\N")
         overlay_events.append(
-            f"Dialogue: 1,0:00:00.00,{ov_end_str},{style_name},,0,0,0,,{{\\an{ass_align_code}\\pos({ov_x_px},{ov_y_px})}}{clean_ov_text}"
+            f"Dialogue: 1,0:00:00.00,{ov_end_str},{style_name},,0,0,0,,{{\\an5\\pos({ov_x_px},{ov_y_px})}}{clean_ov_text}"
         )
 
     overlay_style_line = ("\n".join(overlay_styles) + "\n") if overlay_styles else ""
