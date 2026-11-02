@@ -2,6 +2,7 @@ fastapi
 uvicorn[standard]
 python-multipart
 faster-whisper
+av<18
 requests
 google-genai
 python-dotenv
