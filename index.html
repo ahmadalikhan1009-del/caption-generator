@@ -5515,26 +5515,23 @@
 
             const thisJobId = 'custom_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
             currentCustomJobId = thisJobId;
-            customClipAbortController = new AbortController();
             isCustomClippingActive = true;
 
+            const totalFileMB = (file.size / (1024 * 1024)).toFixed(1);
             btnCustomGenerate.disabled = true;
-            btnCustomGenerate.innerHTML = '<span>Dividing Video into Clips...</span>';
+            btnCustomGenerate.innerHTML = `<span>Uploading (0% of ${totalFileMB} MB)...</span>`;
             btnCustomCancel.style.display = 'inline-block';
             btnCustomCancel.disabled = false;
-            showStatus('Splitting video into consecutive equal clips with FFmpeg... Please wait.', 'info');
+            showStatus(`Starting upload of ${file.name} (${totalFileMB} MB)... Please wait.`, 'info');
 
             const formData = new FormData();
             formData.append('file', file);
             formData.append('clip_duration_seconds', clipDurSecs);
             formData.append('job_id', thisJobId);
             formData.append('auth_token', currentUser ? currentUser.token : '');
-            // Pass selected aspect ratio, fit mode, and pad color
             formData.append('aspect_ratio', ratio916Btn.classList.contains('active') ? '9:16' : 'original');
             formData.append('fit_mode', activeFitMode || 'fit');
             formData.append('pad_color', activeCanvasColor || 'black');
-            // Note: Each clip maintains independent text overlays rendered on-demand upon export
-
 
             let clipPollInterval = null;
             let customCompleted = false;
@@ -5557,7 +5554,6 @@
                     }
                 }
 
-                // Update clips count for logged-in user
                 if (data.clips_count !== undefined && data.clips_count !== null && currentUser) {
                     currentUser.clips_count = data.clips_count;
                     currentUser.has_reviewed = data.has_reviewed;
@@ -5569,88 +5565,95 @@
                 }
 
                 renderCustomClipsTray(customGeneratedClips, customZipDownloadUrl);
-                showStatus('Successfully generated ' + customGeneratedClips.length + ' clips! Download clips individually below or as a ZIP.', 'success');
+                showStatus('Successfully generated ' + customGeneratedClips.length + ' clips! Customize text boxes or download clips individually / ZIP.', 'success');
                 if (customGeneratedClips.length > 0) {
                     handleVideoCompletion(file, data);
                 }
             };
 
-            const pollStartTime = Date.now();
-            clipPollInterval = setInterval(async () => {
-                if (currentCustomJobId !== thisJobId || customCompleted) {
-                    if (clipPollInterval) clearInterval(clipPollInterval);
-                    return;
-                }
-                const elapsedSec = Math.floor((Date.now() - pollStartTime) / 1000);
-                const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
-                const ss = String(elapsedSec % 60).padStart(2, '0');
-                const elapsedStr = mm + ':' + ss;
+            // Use XMLHttpRequest for real-time upload progress tracking
+            const xhr = new XMLHttpRequest();
+            window._activeCustomXhr = xhr;
 
-                try {
-                    const stRes = await fetch(API_URL + '/api/custom-clip/status/' + thisJobId);
-                    if (stRes.ok) {
-                        const stData = await stRes.json();
-                        if (stData && stData.status === 'processing') {
-                            const cur = stData.current_clip || 0;
-                            const tot = stData.total_clips || 0;
-                            const pct = stData.progress || 0;
-                            if (tot > 0) {
-                                btnCustomGenerate.innerHTML = '<span>Splitting Clip ' + cur + ' of ' + tot + ' (' + pct + '%)...</span>';
-                                showStatus('Dividing video: Processing clip ' + cur + ' of ' + tot + ' (' + pct + '%) &bull; Elapsed: ' + elapsedStr, 'info');
-                            } else {
-                                btnCustomGenerate.innerHTML = '<span>Dividing Video into Clips (' + elapsedStr + ')...</span>';
-                                showStatus('Dividing video into clips with FFmpeg... Elapsed: ' + elapsedStr, 'info');
-                            }
-                        } else if (stData && stData.status === 'completed' && stData.result) {
-                            handleCustomSuccess(stData.result);
+            const uploadStartTime = Date.now();
+            xhr.upload.onprogress = (e) => {
+                if (currentCustomJobId !== thisJobId || customCompleted) return;
+                if (e.lengthComputable && e.total > 0) {
+                    const pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
+                    const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
+                    const totalMB = (e.total / (1024 * 1024)).toFixed(1);
+                    const elapsedSec = Math.max(0.5, (Date.now() - uploadStartTime) / 1000);
+                    const speedMBs = ((e.loaded / (1024 * 1024)) / elapsedSec).toFixed(2);
+                    
+                    let remainingStr = '';
+                    const speedNum = parseFloat(speedMBs);
+                    if (speedNum > 0.05) {
+                        const remSec = Math.max(0, Math.round((e.total - e.loaded) / (speedNum * 1024 * 1024)));
+                        const remMin = Math.floor(remSec / 60);
+                        const remS = remSec % 60;
+                        remainingStr = ` &bull; Est. Time: ${remMin > 0 ? remMin + 'm ' : ''}${remS}s`;
+                    }
+
+                    btnCustomGenerate.innerHTML = `<span>Uploading: ${pct}% (${loadedMB}/${totalMB} MB)...</span>`;
+                    showStatus(`Uploading video to server: ${pct}% (${loadedMB} MB / ${totalMB} MB) &bull; Speed: ${speedMBs} MB/s${remainingStr}`, 'info');
+                }
+            };
+
+            xhr.upload.onload = () => {
+                btnCustomGenerate.innerHTML = '<span>Finalizing Clips Tray...</span>';
+                showStatus('Video upload completed! Calculating clips tray...', 'info');
+            };
+
+            xhr.onreadystatechange = () => {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (currentCustomJobId !== thisJobId || customCompleted) return;
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            handleCustomSuccess(data);
+                        } catch (parseErr) {
+                            showStatus('Error parsing server response: ' + parseErr.message, 'error');
                         }
-                    }
-                } catch (_) {}
-            }, 1500);
-
-            try {
-                const response = await fetch(API_URL + '/api/custom-clip/split', {
-                    method: 'POST',
-                    body: formData,
-                    signal: customClipAbortController.signal
-                });
-
-                if (currentCustomJobId !== thisJobId) return;
-
-                if (!response.ok) {
-                    if (response.status === 499) {
+                    } else if (xhr.status === 499) {
                         showStatus('Custom clipping was cancelled.', 'info');
-                        return;
-                    }
-                    if (response.status === 403) {
+                    } else if (xhr.status === 403) {
                         openReviewModal(true);
-                        return;
-                    }
-                    if (response.status === 401) {
+                    } else if (xhr.status === 401) {
                         openAuthModal('login', 'Session expired. Please sign in again.');
-                        return;
+                    } else if (xhr.status === 413) {
+                        showStatus('Video file is too large for current server upload limit.', 'error');
+                        alert('Video file is too large (413). Please update server Nginx size limit.');
+                    } else if (xhr.status === 504) {
+                        showStatus('Upload timed out (504). Please ensure Nginx timeout is increased.', 'error');
+                        alert('Upload timed out (504). Please apply the Nginx timeout fix.');
+                    } else if (xhr.status !== 0) {
+                        let errMsg = xhr.statusText || ('HTTP ' + xhr.status);
+                        try {
+                            const errJson = JSON.parse(xhr.responseText);
+                            if (errJson && errJson.detail) errMsg = errJson.detail;
+                        } catch (_) {}
+                        showStatus('Error during custom clipping: ' + errMsg, 'error');
                     }
-                    throw new Error(await response.text());
+                    if (clipPollInterval) clearInterval(clipPollInterval);
+                    isCustomClippingActive = false;
+                    btnCustomGenerate.disabled = false;
+                    btnCustomGenerate.innerHTML = '<span>Generate Clips</span>';
+                    btnCustomCancel.style.display = 'none';
                 }
+            };
 
-                const data = await response.json();
-                handleCustomSuccess(data);
-
-            } catch (err) {
-                if (customCompleted) return;
-                if (err.name === 'AbortError' || currentCustomJobId !== thisJobId) {
-                    showStatus('Custom clipping cancelled.', 'info');
-                    return;
-                }
-                console.error(err);
-                showStatus('Error during custom clipping: ' + err.message, 'error');
-            } finally {
+            xhr.onerror = () => {
+                if (currentCustomJobId !== thisJobId || customCompleted) return;
+                showStatus('Network connection error during upload. Please check your internet connection.', 'error');
                 if (clipPollInterval) clearInterval(clipPollInterval);
                 isCustomClippingActive = false;
                 btnCustomGenerate.disabled = false;
                 btnCustomGenerate.innerHTML = '<span>Generate Clips</span>';
                 btnCustomCancel.style.display = 'none';
-            }
+            };
+
+            xhr.open('POST', API_URL + '/api/custom-clip/split');
+            xhr.send(formData);
         });
 
         // Cancel Custom Clips Button Handler
@@ -5660,6 +5663,10 @@
             btnCustomCancel.disabled = true;
             btnCustomCancel.innerHTML = '<span>Cancelling...</span>';
 
+            if (window._activeCustomXhr) {
+                try { window._activeCustomXhr.abort(); } catch (_) {}
+                window._activeCustomXhr = null;
+            }
             if (customClipAbortController) {
                 try { customClipAbortController.abort(); } catch (_) {}
             }
